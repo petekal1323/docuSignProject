@@ -25,14 +25,20 @@ app.use(session({
 
 app.post('/form', async (request, response) => {
     await checkToken(request);
-        let envelopesApi = getEnvelopesApi(request);
-        let envelope = makeEnvelope(request.body.name, request.body.email);
+    let envelopesApi = getEnvelopesApi(request);
+    let envelope = makeEnvelope(request.body.name, request.body.email, request.body.company);
 
-        let results = await envelopesApi.createEnvelope(
-            process.env.ACCOUNT_ID, {envelopeDefinition: envelope,
-        });
-        console.log("envelope results", results);
-        response.send("Form data recieved");
+    let results = await envelopesApi.createEnvelope(
+        process.env.ACCOUNT_ID, {envelopeDefinition: envelope,});
+
+    console.log("envelope results", results);
+
+    let viewRequest = makeRecipientViewRequest(request.body.name, request.body.email, request.body.company);
+    results = await envelopesApi.createRecipientView(process.env.ACCOUNT_ID, results.envelopeId, {
+        recipientViewRequest: viewRequest});
+
+    response.redirect(results.url);
+    //console.log("view results", results);
 });
 
 
@@ -44,27 +50,45 @@ function getEnvelopesApi(request) {
 };
 
 
-
-
-function makeEnvelope(name, email) {
+function makeEnvelope(name, email, company) {
     let env = new docusign.EnvelopeDefinition();
     env.templateId = process.env.TEMPLATE_ID;
+    let text = docusign.Text.constructFromObject({
+        tabLabel: 'company_name', value: company,
+    });
+
+// Pull together the existing and new tabs in a Tabs object:
+    let tabs = docusign.Tabs.constructFromObject({
+        textTabs: [text]
+    });
 
     let signer1 = docusign.TemplateRole.constructFromObject({
         email: email,
         name: name,
+        tabs: tabs,
+        clientUserId: process.env.CLIENT_USER_ID,
         roleName: 'Signer',
     });
 
     env.templateRoles = [signer1];
+    env.status = 'sent';
 
     return env;
 }
 
+function makeRecipientViewRequest(name, email) {
 
+    let viewRequest = new docusign.RecipientViewRequest();
 
+    viewRequest.returnUrl = "http://localhost:8000/success";
+    viewRequest.authenticationMethod = 'none';
 
+    viewRequest.email = email;
+    viewRequest.userName = name;
+    viewRequest.clientUserId = process.env.CLIENT_USER_ID;
 
+    return viewRequest;
+}
 
 
 
@@ -95,7 +119,8 @@ app.get('/', async (request, response) => {
 
 
 app.get("/success", (request, response) => {
-    response.send("Success");
+    //response.send("Success");
+    response.sendFile(path.join(__dirname, "success.html"));
 });
 // https://account-d.docusign.com/oauth/auth?response_type=code&scope=signature%20impersonation&client_id=5b4bdf98-3145-45b4-a419-6d25f877ec5b&redirect_uri=http://localhost:8000/
 

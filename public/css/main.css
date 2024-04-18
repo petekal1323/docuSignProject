@@ -8,15 +8,16 @@
     margin: 10px auto;
     width: 600px;
     border: 1px solid;
-    height: 225px;
+    height: auto;
     position: absolute;
     left: 50%;
     top: 25%;
     transform: translate(-50%, -50%);
+    padding: 25px;
 }
 #main_form h2 {
     text-align: center;
-    margin-bottom: 5px;
+    margin-bottom: 25px;
 }
 #main_form form {
     display: flex;
@@ -34,6 +35,16 @@
     width: 110px;
     text-align: right;
 }
+
+#main_form form input {
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    border-bottom: 2px solid;
+    margin-bottom: 15px;
+    height: 40px;
+}
+
 #main_form form input[type=submit] {
     margin: 10px auto 0;
     padding: 10px 20px; /* Adjust padding to make the button larger */
